@@ -3,4 +3,8 @@ Rails.application.routes.draw do
 
   # Defines the root path route ("/")
   # root "articles#index"
+
+  resources :doctors do
+    resources :availabilities, except: [:new, :edit, :show], module: :doctors
+  end
 end

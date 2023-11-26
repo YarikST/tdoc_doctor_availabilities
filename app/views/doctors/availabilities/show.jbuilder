@@ -1,0 +1,1 @@
+json.working_hours working_hours, :id, :doctor_id, :start_at, :end_at, :wday, :created_at, :updated_at
