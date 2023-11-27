@@ -28,7 +28,7 @@ RSpec.describe "Doctors::Availabilities", type: :request do
     end
 
     context "when failed" do
-      it "returns created working_hours" do
+      it "returns error" do
         post "/doctors/#{doctor.id}/availabilities", params: { working_hours: { wday: nil } }.to_json, headers: {"Content-Type" => "application/json"}
 
         expect(response).to have_http_status(:unprocessable_entity)
@@ -51,7 +51,7 @@ RSpec.describe "Doctors::Availabilities", type: :request do
     end
 
     context "when failed" do
-      it "returns created working_hours" do
+      it "returns error" do
         put "/doctors/#{doctor.id}/availabilities/#{working_hour.id}", params: { working_hours: { wday: '' } }.to_json, headers: {"Content-Type" => "application/json"}
 
         expect(response).to have_http_status(:unprocessable_entity)

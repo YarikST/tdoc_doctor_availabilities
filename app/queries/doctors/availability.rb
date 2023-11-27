@@ -24,10 +24,11 @@ class Doctors::Availability
   private
 
   def select_sql
-    sql = ''
-
-    sql += 'min(series_hour) as slot' if filters[:slots_range] == 'asap'
-    sql += 'series_hour as slot' if filters[:slots_range] != 'asap'
+    if filters[:slots_range] == 'asap'
+      sql = 'min(series_hour) as slot'
+    else
+      sql = 'series_hour as slot'
+    end
 
     sql
   end
