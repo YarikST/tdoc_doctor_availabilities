@@ -20,21 +20,31 @@
 
 ```
 entity Doctor
+    name: String => Doctors Name
+
     has_many :appointments
     has_many :patients through: :appointments
     
-    has_many :working_houres
+    has_many :working_hours
 end
 
 entity Patient
+    name: String => Patients Name
+    
     has_many :appointments
 end
 
 entity WorkingHours
+    start_at:   DateTime => Working start date
+    end_at:     DateTime => Working end date
+    wday:       Number   => Day of the week
+    
     belongs_to :doctor
 end
 
 entity Appointment
+    disease: String => Appointments description
+
     belongs_to :patient
     belongs_to :doctor
 end
@@ -45,6 +55,17 @@ end
     It is created for whole week by each day it contains start & stop dates.
     Like: M[09AM - 12AM] M[1PM - 6PM] T[11AM - 12AM] T[2PM - 4PM]
 
+    I don't like idea to generate working hours for future days, 
+    because it has tons of IO + we need to update records if schedule changed
+
+    I use generate_series to create slots for day | week | month | year;
+    You might use offset | limit to filter your preferred slots;
+    You might use asap filter to search quickest open slot;
+    You might adjust slots length;
+
+    You might use materialized view to improve performance(update them when schedule changed)
+
+
 #### Appointment
 ###### Represents appointments when doctor & patient discuss treatment
 
@@ -53,3 +74,12 @@ end
 
 #### Patient
 ###### Represents patients who is participating in appointment
+
+
+## Improvements
+- add pundit
+- add dry-schema, dry-validation
+- add rubocop
+- Use arel to simplify Doctors::Availability
+- add authn vs authz
+- add rescue_from
