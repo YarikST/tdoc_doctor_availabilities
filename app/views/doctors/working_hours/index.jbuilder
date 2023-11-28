@@ -1,0 +1,1 @@
+json.working_hours working_hours, :id, :start_at, :end_at, :wday

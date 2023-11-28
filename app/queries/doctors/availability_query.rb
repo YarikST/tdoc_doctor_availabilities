@@ -1,5 +1,5 @@
 
-class Doctors::Availability
+class Doctors::AvailabilityQuery
   # param availability_range:string generates slots for day | week | month | year;
   # param slots_range:string filters slots for all | asap | tomorrow;
   # param slots_step:string represents slots bounding 15 minutes | 30 minutes | 1 hour
@@ -7,13 +7,16 @@ class Doctors::Availability
   # param slots_limit:string allows to limit N last slots 04:00 PM
   def initialize(filters = {})
     @filters = filters
+    @doctor = filters[:doctor]
   end
-  attr_reader :filters
-  delegate :doctor, to: :filters
+  attr_reader :filters, :doctor
 
   def call
     scope = base_scope
-    scope = join_series_hours(scope)
+    scope = scope.joins(generate_series_sql)
+    scope = scope.joins(appointments_sql)
+    scope = scope.where(doctor_id: doctor.id)
+    scope = scope.where(appointments: { id: nil })
     scope = scope.where(where_sql)
     scope = scope.group(group_by_sql)
     scope = scope.select(select_sql)
@@ -24,21 +27,25 @@ class Doctors::Availability
   private
 
   def select_sql
-    if filters[:slots_range] == 'asap'
-      sql = 'min(series_hour) as slot'
+    if filters[:slots_range] != 'asap'
+      <<~SQL
+      series_hour as slot_start_at, 
+      series_hour + #{slots_interval_sql} as slot_end_at,
+      extract(dow from series_hour)::integer as slot_dow
+    SQL
     else
-      sql = 'series_hour as slot'
+      <<~SQL
+      min(series_hour) as slot_start_at, 
+      min(series_hour) + #{slots_interval_sql} as slot_end_at,
+      extract(dow from min(series_hour))::integer as slot_dow
+    SQL
     end
-
-    sql
   end
 
   def group_by_sql
-    sql = ''
+    return '' unless filters[:slots_range] == 'asap'
 
-    sql += 'extract(dow from series_hour)' if filters[:slots_range] == 'asap'
-
-    sql
+    'extract(dow from series_hour)'
   end
 
   def where_sql
@@ -51,18 +58,28 @@ class Doctors::Availability
     sql
   end
 
-  def join_series_hours(scope)
-    scope.joins(generate_series_sql)
-  end
-
   def generate_series_sql
     <<~SQL
         INNER JOIN
-        generate_series('#{availability_range.begin}'::timestamp, '#{availability_range.end}'::timestamp, '#{slots_step}'::interval) series_hour
+        generate_series('#{availability_range.begin}'::timestamp, '#{availability_range.end}'::timestamp, #{slots_interval_sql}) series_hour
         ON  working_hours.wday = extract(dow from series_hour) AND
             series_hour >= (date_trunc('day', series_hour) + CAST(working_hours.start_at AS TIME)) AND
             series_hour < (date_trunc('day', series_hour) + CAST(working_hours.end_at AS TIME))
     SQL
+  end
+
+  def appointments_sql
+    <<~SQL
+        LEFT JOIN appointments ON appointments.doctor_id = working_hours.doctor_id AND appointments.wday = extract(dow from series_hour) AND (
+            (appointments.start_at >= series_hour AND appointments.start_at < (series_hour + #{slots_interval_sql}))
+        OR
+            (appointments.end_at > series_hour AND appointments.end_at <= (series_hour + #{slots_interval_sql}))
+        )
+    SQL
+  end
+
+  def slots_interval_sql
+    "'#{slots_step}'::interval"
   end
 
   def slots_step

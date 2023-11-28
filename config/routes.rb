@@ -4,7 +4,9 @@ Rails.application.routes.draw do
   # Defines the root path route ("/")
   # root "articles#index"
 
-  resources :doctors do
-    resources :availabilities, except: [:new, :edit, :show], module: :doctors
+  resources :doctors, module: :doctors do
+    resources :working_hours, except: [:new, :edit, :show]
+    resources :appointments, except: [:new, :edit, :show]
+    resources :availabilities, only: :index
   end
 end

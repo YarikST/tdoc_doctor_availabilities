@@ -44,6 +44,9 @@ end
 
 entity Appointment
     disease: String => Appointments description
+    start_at:   DateTime => Appointments start date
+    end_at:     DateTime => Appointments end date
+    wday:       Number   => Day of the week
 
     belongs_to :patient
     belongs_to :doctor
@@ -80,6 +83,6 @@ end
 - add pundit
 - add dry-schema, dry-validation
 - add rubocop
-- Use arel to simplify Doctors::Availability
-- add authn vs authz
+- use arel to simplify Doctors::Availability
+- add authn / authz
 - add rescue_from
