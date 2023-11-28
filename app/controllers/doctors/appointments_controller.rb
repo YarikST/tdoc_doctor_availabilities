@@ -1,6 +1,6 @@
 class Doctors::AppointmentsController < ApplicationController
-  before_action :find_doctor
-  before_action :find_patient
+  before_action :find_doctor, only: :create
+  before_action :find_patient, except: :destroy
   before_action :find_appointment, only: [:update, :destroy]
 
   def index
