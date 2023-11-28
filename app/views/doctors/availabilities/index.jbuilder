@@ -1,1 +1,1 @@
-json.working_hours working_hours, :id, :start_at, :end_at, :wday
+json.availabilities availabilities, :slot_start_at, :slot_end_at, :slot_dow

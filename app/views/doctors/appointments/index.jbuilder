@@ -1,0 +1,1 @@
+json.appointments appointments, :id, :start_at, :end_at, :wday, :disease
