@@ -1,10 +1,9 @@
 class Doctors::AppointmentsController < ApplicationController
-  before_action :find_doctor, only: :create
-  before_action :find_patient, except: :destroy
+  before_action :find_doctor
   before_action :find_appointment, only: [:update, :destroy]
 
   def index
-    render :index, locals: { appointments: @patient.appointments }
+    render :index, locals: { appointments: @doctor.appointments }
   end
 
   def create
@@ -33,7 +32,7 @@ class Doctors::AppointmentsController < ApplicationController
   private
 
   def appointment_params
-    params.require(:appointment).permit(:start_at, :end_at, :wday, :disease).merge(patient: @patient)
+    params.require(:appointment).permit(:start_at, :end_at, :wday, :disease, :patient_id)
   end
 
   def create_appointment(params)
@@ -44,11 +43,7 @@ class Doctors::AppointmentsController < ApplicationController
     @doctor = Doctor.find(params[:doctor_id])
   end
 
-  def find_patient
-    @patient = Patient.find(params[:patient_id])
-  end
-
   def find_appointment
-    @appointment = Appointment.find(params[:id])
+    @appointment = @doctor.appointments.find(params[:id])
   end
 end

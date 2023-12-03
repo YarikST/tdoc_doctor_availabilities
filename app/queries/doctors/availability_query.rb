@@ -29,15 +29,15 @@ class Doctors::AvailabilityQuery
   def select_sql
     if filters[:slots_range] != 'asap'
       <<~SQL
-      series_hour as slot_start_at, 
-      series_hour + #{slots_interval_sql} as slot_end_at,
-      extract(dow from series_hour)::integer as slot_dow
+        series_hour as slot_start_at, 
+        series_hour + #{slots_interval_sql} as slot_end_at,
+        extract(dow from series_hour)::integer as slot_dow
     SQL
     else
       <<~SQL
-      min(series_hour) as slot_start_at, 
-      min(series_hour) + #{slots_interval_sql} as slot_end_at,
-      extract(dow from min(series_hour))::integer as slot_dow
+        min(series_hour) as slot_start_at, 
+        min(series_hour) + #{slots_interval_sql} as slot_end_at,
+        extract(dow from min(series_hour))::integer as slot_dow
     SQL
     end
   end
@@ -58,16 +58,18 @@ class Doctors::AvailabilityQuery
     sql
   end
 
+  # Create schedule for 'current date' based on view date
+  # As we don't generate working hours for future dates we need to simulate this
   def generate_series_sql
     <<~SQL
-        INNER JOIN
-        generate_series('#{availability_range.begin}'::timestamp, '#{availability_range.end}'::timestamp, #{slots_interval_sql}) series_hour
+        INNER JOIN generate_series('#{availability_range.begin}'::timestamp, '#{availability_range.end}'::timestamp, #{slots_interval_sql}) series_hour
         ON  working_hours.wday = extract(dow from series_hour) AND
             series_hour >= (date_trunc('day', series_hour) + CAST(working_hours.start_at AS TIME)) AND
             series_hour < (date_trunc('day', series_hour) + CAST(working_hours.end_at AS TIME))
     SQL
   end
 
+  # Check which slots are booked
   def appointments_sql
     <<~SQL
         LEFT JOIN appointments ON appointments.doctor_id = working_hours.doctor_id AND appointments.wday = extract(dow from series_hour) AND (

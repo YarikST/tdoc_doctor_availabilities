@@ -43,7 +43,7 @@ entity WorkingHours
 end
 
 entity Appointment
-    disease: String => Appointments description
+    disease:    String => Appointments description
     start_at:   DateTime => Appointments start date
     end_at:     DateTime => Appointments end date
     wday:       Number   => Day of the week

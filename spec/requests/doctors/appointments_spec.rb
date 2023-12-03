@@ -2,11 +2,10 @@ require "rails_helper"
 
 RSpec.describe "Doctors::Appointments", type: :request do
   describe "GET /doctors/:doctor_id/appointments" do
-    let(:patient) { create(:patient) }
-    let(:appointment) { create(:appointment, patient:) }
+    let(:appointment) { create(:appointment) }
 
     it "returns list of appointments" do
-      get "/doctors/#{appointment.doctor.id}/appointments", params: { patient_id: patient.id }, headers: {"Content-Type" => "application/json"}
+      get doctor_appointments_path(appointment.doctor)
 
       expect(response).to have_http_status(:ok)
       expect(JSON.parse(response.body)['appointments']).to contain_exactly(a_hash_including({ "id" => appointment.id }))
@@ -20,7 +19,7 @@ RSpec.describe "Doctors::Appointments", type: :request do
 
     context "when success" do
       it "returns created appointment" do
-        post "/doctors/#{doctor.id}/appointments", params: { patient_id: patient.id, appointment: appointment_attr}.to_json, headers: {"Content-Type" => "application/json"}
+        post doctor_appointments_path(doctor), params: { appointment: appointment_attr }, as: :json
 
         expect(response).to have_http_status(:created)
         expect(JSON.parse(response.body)['appointment']).to a_hash_including({ "doctor_id" => appointment_attr.doctor_id })
@@ -29,7 +28,7 @@ RSpec.describe "Doctors::Appointments", type: :request do
 
     context "when failed" do
       it "returns error" do
-        post "/doctors/#{doctor.id}/appointments", params: { patient_id: patient.id, appointment: { wday: nil } }.to_json, headers: {"Content-Type" => "application/json"}
+        post doctor_appointments_path(doctor), params: { appointment: { patient_id: patient.id, wday: nil } }
 
         expect(response).to have_http_status(:unprocessable_entity)
         expect(JSON.parse(response.body)['errors']).to contain_exactly("Start at can't be blank", "End at can't be blank", "Wday can't be blank", "Disease can't be blank")
@@ -43,9 +42,7 @@ RSpec.describe "Doctors::Appointments", type: :request do
 
     context "when success" do
       it "returns updated appointments" do
-        put "/doctors/#{appointment.doctor.id}/appointments/#{appointment.id}", params: {
-          patient_id: patient.id, appointment: { wday: 3 }
-        }.to_json, headers: {"Content-Type" => "application/json"}
+        put doctor_appointment_path(appointment.doctor, appointment), params: { appointment: { wday: 3 } }
 
         expect(response).to have_http_status(:ok)
         expect(JSON.parse(response.body)['appointment']).to a_hash_including({ "id" => appointment.id, "wday" => 3 })
@@ -54,9 +51,7 @@ RSpec.describe "Doctors::Appointments", type: :request do
 
     context "when failed" do
       it "returns error" do
-        put "/doctors/#{appointment.doctor.id}/appointments/#{appointment.id}", params: {
-          patient_id: patient.id, appointment: { wday: nil }
-        }.to_json, headers: {"Content-Type" => "application/json"}
+        put doctor_appointment_path(appointment.doctor, appointment), params: { appointment: { wday: nil } }
 
         expect(response).to have_http_status(:unprocessable_entity)
         expect(JSON.parse(response.body)['errors']).to contain_exactly("Wday can't be blank")
@@ -70,7 +65,7 @@ RSpec.describe "Doctors::Appointments", type: :request do
 
     context "when success" do
       it "destroys appointments" do
-        delete "/doctors/#{appointment.doctor.id}/appointments/#{appointment.id}", params: { patient_id: patient.id }.to_json, headers: {"Content-Type" => "application/json"}
+        delete doctor_appointment_path(appointment.doctor, appointment)
 
         expect(response).to have_http_status(:ok)
         expect(Appointment.find_by(id: appointment.id)).to be(nil)
